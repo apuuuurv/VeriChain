@@ -17,9 +17,30 @@ export async function applyToJob(token, _, jobData) {
 
   const resume = `${supabaseUrl}/storage/v1/object/public/resumes/${fileName}`;
 
+  let certificateUrl = null;
+  if (jobData.certificates) {
+    const certificateFileName = `certificate-${random}-${jobData.candidate_id}`;
+    const { error: certificateStorageError } = await supabase.storage
+      .from("certificates")
+      .upload(certificateFileName, jobData.certificates);
+      
+    if (certificateStorageError) {
+      console.error("Error Uploading Certificate:", certificateStorageError);
+      // Continue with application even if certificate upload fails
+    } else {
+      certificateUrl = `${supabaseUrl}/storage/v1/object/public/certificates/${certificateFileName}`;
+    }
+  }
+
+  const applicationData = {
+    ...jobData,
+    resume,
+    certificates: certificateUrl
+  };
+
   const { data, error } = await supabase
     .from("applications")
-    .insert([{ ...jobData, resume }])
+    .insert([applicationData])
     .select();
 
   if (error) {
