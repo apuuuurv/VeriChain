@@ -34,6 +34,9 @@ import {
   User,
   Database,
   Lock,
+  Building,
+  Award,
+  Star,
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 
@@ -54,9 +57,29 @@ const schema = z.object({
       (file) =>
         file[0] &&
         (file[0].type === "application/pdf" ||
-          file[0].type === "application/msword"),
-      { message: "Only PDF or Word documents are allowed" }
+          file[0].type === "application/msword" ||
+          file[0].type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+          file[0].type.startsWith("image/")),
+      { message: "Only PDF, Word documents, or images are allowed" }
     ),
+  // Changed certificates to file upload
+  certificates: z
+    .any()
+    .optional()
+    .refine(
+      (file) =>
+        !file[0] ||
+        file[0].type === "application/pdf" ||
+        file[0].type === "application/msword" ||
+        file[0].type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        file[0].type.startsWith("image/"),
+      { message: "Only PDF, Word documents, or images are allowed" }
+    ),
+  // Added optional fields
+  previous_company: z.string().optional(),
+  certificate_name: z.string().optional(),
 });
 
 const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
@@ -87,14 +110,22 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
 
   const onSubmit = async (data) => {
     try {
-      await fnApply({
+      // Create form data to properly handle file uploads
+      const formData = {
         ...data,
         job_id: job.id,
         candidate_id: user.id,
         name: user.fullName,
         status: "applied",
         resume: data.resume[0],
-      });
+        // Handle certificates file if it exists
+        certificates:
+          data.certificates && data.certificates[0]
+            ? data.certificates[0]
+            : null,
+      };
+
+      await fnApply(formData);
 
       toast.success("Application submitted successfully!");
       reset();
@@ -122,7 +153,12 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
       const response = await axios.post(
         "/api/blockchain/verify-signature",
         payload,
-        { headers: { "Content-Type": "application/json" }, baseURL: "http://localhost:5000"}
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       toast.dismiss();
@@ -167,7 +203,7 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
               : "Hiring Closed"}
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="max-w-4xl mx-auto">
+        <DrawerContent className="max-w-4xl mx-auto max-h-[95vh]">
           <DrawerHeader className="border-b pb-4">
             <div className="flex items-center space-x-2 mb-2">
               <Briefcase className="w-5 h-5 text-blue-500" />
@@ -181,7 +217,7 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto p-6">
             <div className="md:col-span-2">
               <form
                 onSubmit={handleSubmit(onSubmit)}
@@ -213,6 +249,7 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
+                    <Star className="w-4 h-4 text-blue-500" />
                     <Label htmlFor="skills" className="font-medium">
                       Skills
                     </Label>
@@ -228,6 +265,75 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
                     <p className="text-red-500 text-sm flex items-center">
                       <AlertCircle className="w-4 h-4 mr-1" />{" "}
                       {errors.skills.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Previous Company Field */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Building className="w-4 h-4 text-blue-500" />
+                    <Label htmlFor="previous_company" className="font-medium">
+                      Previous Company (Optional)
+                    </Label>
+                  </div>
+                  <Input
+                    id="previous_company"
+                    type="text"
+                    placeholder="Previous Company Name"
+                    className="h-12 text-base"
+                    {...register("previous_company")}
+                  />
+                  {errors.previous_company && (
+                    <p className="text-red-500 text-sm flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />{" "}
+                      {errors.previous_company.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Certificate Name Field */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Award className="w-4 h-4 text-blue-500" />
+                    <Label htmlFor="certificate_name" className="font-medium">
+                      Name of the Certificate (Optional)
+                    </Label>
+                  </div>
+                  <Input
+                    id="certificate_name"
+                    type="text"
+                    placeholder="Enter the name of your certificate"
+                    className="h-12 text-base"
+                    {...register("certificate_name")}
+                  />
+                  {errors.certificate_name && (
+                    <p className="text-red-500 text-sm flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />{" "}
+                      {errors.certificate_name.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Certificates Field - Changed to file upload */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Award className="w-4 h-4 text-blue-500" />
+                    <Label htmlFor="certificates" className="font-medium">
+                      Certificates (Optional)
+                    </Label>
+                  </div>
+                  <Input
+                    id="certificates"
+                    type="file"
+                    accept=".pdf, .doc, .docx, image/*"
+                    className="h-12 text-base file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    {...register("certificates")}
+                  />
+                  {errors.certificates && (
+                    <p className="text-red-500 text-sm flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />{" "}
+                      {errors.certificates.message}
                     </p>
                   )}
                 </div>
@@ -297,7 +403,7 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
                   <Input
                     id="resume"
                     type="file"
-                    accept=".pdf, .doc, .docx"
+                    accept=".pdf, .doc, .docx, image/*"
                     className="h-12 text-base file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     {...register("resume")}
                   />
@@ -371,14 +477,20 @@ const ApplyJobDrawer = ({ user, job, applied = false, fetchJob }) => {
                     <li className="flex gap-2">
                       <span className="text-blue-600 font-bold">•</span>
                       <span>
-                        Verify your experience with blockchain for faster
-                        processing
+                        Include previous company information for validation
                       </span>
                     </li>
                     <li className="flex gap-2">
                       <span className="text-blue-600 font-bold">•</span>
                       <span>
-                        Check your application status on your profile dashboard
+                        Upload certificates to stand out from other applicants
+                      </span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <span>
+                        Verify your experience with blockchain for faster
+                        processing
                       </span>
                     </li>
                   </ul>
