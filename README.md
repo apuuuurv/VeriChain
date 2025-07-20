@@ -15,7 +15,7 @@
       </a>
     </td>
     <td align="center">
-      <a href="https://github.com/parthpatel">
+      <a href="https://github.com/parthpatil060">
         <img src="https://avatars.githubusercontent.com/parthpatel" width="100px;" alt="Parth Patel"/><br />
         <sub><b>Parth Patil</b></sub>
       </a>
