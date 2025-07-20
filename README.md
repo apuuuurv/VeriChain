@@ -3,7 +3,7 @@
 <table>
   <tr>
     <td align="center">
-      <a href="https://github.com/apurvmadaye](https://github.com/apuuuurv">
+      <a href="https://github.com/apuuuurv">
         <img src="https://avatars.githubusercontent.com/apurvmadaye" width="100px;" alt="Apurv Madaye"/><br />
         <sub><b>Apurv Madaye</b></sub>
       </a>
