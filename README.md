@@ -9,7 +9,7 @@
       </a>
     </td>
     <td align="center">
-      <a href="https://github.com/shreyakondu">
+      <a href="https://github.com/shreyaverse">
         <img src="https://avatars.githubusercontent.com/shreyakondu" width="100px;" alt="Shreya Kondu"/><br />
         <sub><b>Shreya Kondu</b></sub>
       </a>
